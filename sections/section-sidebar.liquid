@@ -1,0 +1,496 @@
+<!-- /sections/section-rich-text.liquid -->
+{%- liquid
+  assign aside_html = ''
+  assign content_html = ''
+  assign first_element_flag = true
+  assign bg_color = section.settings.bg_color
+  assign text_color = section.settings.color
+  assign animation_anchor = '#Sidebar--' | append: section.id
+  assign animation_order = 1
+-%}
+
+{%- style -%}
+  #Sidebar--{{ section.id }} {
+    --PT: {{ section.settings.padding_top }}px;
+    --PB: {{ section.settings.padding_bottom }}px;
+
+    {%- unless bg_color == 'rgba(0,0,0,0)' or bg_color == blank -%}
+      --bg: {{ bg_color }};
+    {%- endunless -%}
+
+    {%- unless text_color == 'rgba(0,0,0,0)' or text_color == blank -%}
+      --text: {{ text_color }};
+      --link: {{ text_color }};
+    {%- endunless -%}
+  }
+{%- endstyle -%}
+
+{%- if section.blocks.size > 0 -%}
+  {%- for block in section.blocks -%}
+    {%- liquid
+      assign title = block.settings.title
+      assign text = block.settings.text
+      assign content = block.settings.content
+      assign unique = 'Widget--' | append: block.id
+    -%}
+
+    {%- capture aside_html -%}
+      {{ aside_html }}
+
+      {%- if block.type == 'header' and title != blank -%}
+        <li>
+          <button type="button" class="widget__link{% if first_element_flag %} is-selected{% endif %}"
+            data-scroll-to="#{{ unique }}"
+            data-scroll-spy="#{{ unique }}"
+            data-scroll-spy-desktop
+            data-scroll-trigger-point="top"
+            {{ block.shopify_attributes }}>
+            {{- title -}}
+          </button>
+        </li>
+        {%- assign first_element_flag = false -%}
+      {%- endif -%}
+    {%- endcapture -%}
+
+    {%- capture content_html -%}
+      {{ content_html }}
+
+      {%- if block.type == 'header' and title != blank -%}
+        <h6 class="section-sidebar__title" id="{{ unique }}" {{ block.shopify_attributes }}>{{ title }}</h6>
+      {%- endif -%}
+
+      {%- if block.type == 'text' and text != blank -%}
+        <div class="section-sidebar__text rte" {{ block.shopify_attributes }}>{{ text }}</div>
+      {%- endif -%}
+
+      {%- if block.type == 'accordion' and title != blank and content != blank -%}
+        <details class="accordion" data-collapsible {{ block.shopify_attributes }}>
+          <summary class="accordion__title" data-collapsible-trigger>
+            {{ title }}
+
+            {%- render 'icon-plus' -%}
+            {%- render 'icon-minus' -%}
+          </summary>
+
+          <div class="accordion__body rte" data-collapsible-body>
+            <div class="accordion__content" data-collapsible-content>
+              {{ content }}
+              {%- if block.settings.custom_table_enable == true -%}
+               {%- liquid
+                   assign table_settings = block.settings
+               -%}
+               <div class="custom-table-container" style="f
+                   margin: 0 auto;
+                   margin-top: {{ table_settings.margin_top }}px;
+                   margin-bottom: {{ table_settings.margin_bottom }}px;
+                   color: {{ table_settings.table_text_color }}
+               ">
+                   <table class="custom-table" style="border-collapse: collapse; width: 100%;">
+                       <tbody>
+                           {% for row in (1..table_settings.rows) %}
+                               <tr>
+                                   {% for column in (1..table_settings.columns) %}
+                                       {% assign cellTextId = "cell_text_" | append: row |            append: "_" | append: column %}
+                                       {% assign cellText = table_settings[cellTextId] %}
+                                       {% assign specialIds = "cell_text_1_1,cell_text_1_2,cell_text_1_3,cell_text_1_4" | split: "," %}
+                                       <td class="custom-table-cell" style="
+                                           font-weight: {% if specialIds contains cellTextId %}bold{% else %}normal{% endif %};
+                                           border-color: {{ table_settings.table_border_color }} !important;
+                                           font-size: {{ table_settings.text_size | replace: "px", "" }}px;
+                                       ">
+                                           {{ cellText }}
+                                       </td>
+                                   {% endfor %}
+                               </tr>
+                           {% endfor %}
+                       </tbody>
+                   </table>
+               </div>
+               {{ table_settings.below_table_text }}
+           {%- endif -%}
+              
+            </div>
+          </div>
+        </details>
+      {%- endif -%}
+    {%- endcapture -%}
+  {%- endfor -%}
+{%- endif -%}
+
+<section id="Sidebar--{{ section.id }}"
+  class="section-sidebar section-padding"
+  data-section-id="{{ section.id }}"
+  data-section-type="sidebar">
+  {%- if section.blocks.size > 0 -%}
+    <div class="{{ section.settings.width }}">
+      <div class="section-sidebar__body">
+        <div class="section-sidebar__aside"
+          data-aos="hero"
+          data-aos-anchor="{{ animation_anchor }}"
+          data-aos-order="{{ animation_order }}"
+        >
+          <div class="section-sidebar__widget">
+            {%- if aside_html != '' -%}
+              <ul class="widget__links widget__links--secondary">
+                {{ aside_html }}
+              </ul>
+            {%- endif -%}
+          </div>
+        </div>
+        {%- assign animation_order = animation_order | plus: 1 -%}
+
+        <div class="section-sidebar__content"
+          data-aos="hero"
+          data-aos-anchor="{{ animation_anchor }}"
+          data-aos-order="{{ animation_order }}"
+        >
+          <collapsible-elements single="true">
+            {{ content_html }}
+          </collapsible-elements>
+        </div>
+      </div>
+    </div>
+  {%- else -%}
+    {%- render 'no-blocks' -%}
+  {%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Sidebar",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "select",
+      "id": "width",
+      "label": "Width",
+      "default": "wrapper--full-padded",
+      "options": [
+        {"value": "wrapper--full-padded", "label": "Full width padded"},
+        {"value": "wrapper", "label": "Normal"}
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background"
+    },
+    {
+      "type": "color",
+      "id": "color",
+      "label": "Text"
+    },
+    {
+      "type": "header",
+      "content": "Section padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "Padding top",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "Padding bottom",
+      "default": 100
+    }
+  ],
+  "blocks": [
+    {
+      "name": "Header",
+      "type": "header",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Heading",
+          "default": "Heading"
+        }
+      ]
+    },
+    {
+      "name": "Accordion",
+      "type": "accordion",
+      "settings": [
+       {
+         "type": "text",
+         "id": "title",
+         "label": "Question",
+         "default": "Frequently asked question"
+       },
+       {
+         "type": "richtext",
+         "id": "content",
+         "label": "Answer",
+         "default": "<p>Share details about your shipping policies, item returns, or customer service.<\/p>"
+       },
+       {
+         "type": "checkbox",
+         "id": "custom_table_enable",
+         "label": "Enable Customizable Table",
+         "default": false
+       },
+       {
+         "type": "range",
+         "id": "columns",
+         "label": "Number of Columns",
+         "min": 1,
+         "max": 4,
+         "step": 1,
+         "default": 4
+       },
+       {
+         "type": "range",
+         "id": "rows",
+         "label": "Number of Rows",
+         "min": 1,
+         "max": 5,
+         "step": 1,
+         "default": 5
+       },
+       {
+         "type": "text",
+         "id": "margin_top",
+         "label": "Margin Top (in pixels)",
+         "default": "20px"
+       },
+       {
+         "type": "text",
+         "id": "margin_bottom",
+         "label": "Margin Bottom (in pixels)",
+         "default": "20px"
+       },
+       {
+         "type": "text",
+         "id": "text_size",
+         "label": "Text Size (in pixels)",
+         "default": "14"
+       },
+       {
+         "type": "color",
+         "id": "table_text_color",
+         "label": "Text Color",
+         "default": "#E91A1A"
+       },
+       {
+         "type": "color",
+         "id": "table_border_color",
+         "label": "Border Color",
+         "default": "#DCDCDC"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_1_1",
+         "label": "Cell Text (1, 1)",
+         "default": "Order Value"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_1_2",
+         "label": "Cell Text (1, 2)",
+         "default": "Shipping Method"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_1_3",
+         "label": "Cell Text (1, 3)",
+         "default": "Shipping Cost"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_1_4",
+         "label": "Cell Text (1, 4)",
+         "default": "Estimated Delivery Time*"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_2_1",
+         "label": "Cell Text (2, 1)",
+         "default": "Under $250"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_2_2",
+         "label": "Cell Text (2, 2)",
+         "default": "FedEx 2-Day"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_2_3",
+         "label": "Cell Text (2, 3)",
+         "default": "$14.50"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_2_4",
+         "label": "Cell Text (2, 4)",
+         "default": "2 business days"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_3_1",
+         "label": "Cell Text (3, 1)",
+         "default": "Over $250"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_3_2",
+         "label": "Cell Text (3, 2)",
+         "default": "FedEx 2-Day"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_3_3",
+         "label": "Cell Text (3, 3)",
+         "default": "Free"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_3_4",
+         "label": "Cell Text (3, 4)",
+         "default": "2 business days, signature required"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_4_1",
+         "label": "Cell Text (4, 1)",
+         "default": "Under $5,000"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_4_2",
+         "label": "Cell Text (4, 2)",
+         "default": "FedEx Overnight"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_4_3",
+         "label": "Cell Text (4, 3)",
+         "default": "$75.00"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_4_4",
+         "label": "Cell Text (4, 4)",
+         "default": "1 business day, signature required"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_5_1",
+         "label": "Cell Text (5, 1)",
+         "default": "Over $5,000"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_5_2",
+         "label": "Cell Text (5, 2)",
+         "default": "FedEx Overnight"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_5_3",
+         "label": "Cell Text (5, 3)",
+         "default": "Free"
+       },
+       {
+         "type": "text",
+         "id": "cell_text_5_4",
+         "label": "Cell Text (5, 4)",
+         "default": "1 business day, signature required"
+       },
+       {
+         "type": "richtext",
+         "id": "below_table_text",
+         "label": "Text",
+         "default": "<p>* Delivery times do not include order processing times.</p>"
+       }
+     ]
+    },
+    {
+      "name": "Text",
+      "type": "text",
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "<p>Share details about your shipping policies, item returns, or customer service.</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Sidebar",
+      "category": "Text",
+      "blocks": [
+        {
+          "type": "header",
+          "settings": {
+            "title": "Shipping & Returns"
+          }
+        },
+        {
+          "type": "accordion",
+          "settings": {
+            "title": "How much is shipping?",
+            "content": "<p>We offer free shipping on all US orders, and a flat rate of $10 for all international orders.<\/p>"
+          }
+        },
+        {
+          "type": "accordion",
+          "settings": {
+            "title": "What is your return policy?",
+            "content": "<p>We accept returns within 30 days of the purchase date.<\/p>"
+          }
+        },
+        {
+          "type": "header",
+          "settings": {
+            "title": "Discount"
+          }
+        },
+        {
+          "type": "accordion",
+          "settings": {
+            "title": "Can I use more than one discount code?",
+            "content": "<p>Only one discount code can be used per order and cannot be combined with other promotions.<\/p>"
+          }
+        },
+        {
+          "type": "header",
+          "settings": {
+            "title": "Contact"
+          }
+        },
+        {
+          "type": "text",
+          "settings": {
+            "text": "<p>Still have questions? We're happy to help! Please email us at hi@email.com and we will get back to you within 24 hours.<\/p>"
+          }
+        }
+      ]
+    }
+  ],
+  "disabled_on": {
+    "groups": ["header", "aside", "custom.pre_footer", "footer"]
+  }
+}
+{% endschema %}
