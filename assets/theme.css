@@ -6838,7 +6838,7 @@ toggle-ellipsis {
 }
 
 .header__wrapper {
-  --bg: var(--COLOR-MENU-BG);
+  --bg: red;
   --text: var(--COLOR-MENU-LINK);
   --link: var(--COLOR-MENU-LINK);
   --link-hover: var(--COLOR-MENU-LINK-HOVER);
